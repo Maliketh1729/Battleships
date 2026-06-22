@@ -1,4 +1,4 @@
-import time, sys, os, pygame
+import time, sys, os, pygame, random
 #import PySimpleGUI as psG
 from pygame.locals import *                #Allows easier use of pygame functions
 #from tkinter import *
@@ -8,7 +8,7 @@ clock = pygame.time.Clock()         #Limits FPS to 60
 
 #Much of this code was imported from my personal platformer project, so it may be a little messy
 
-#Apologies, it requires another module on top of pyGame - pySimpleGUI.
+#Apologies, it may require another module on top of pyGame - pySimpleGUI.
 #It can be installed through powershell with 'python -m pip install PySimpleGUI'
 
 ScreenSizeObj = pygame.display.Info()
@@ -62,8 +62,16 @@ class Player(pygame.sprite.Sprite):
                 if pressed_keys[K_SPACE] and self.torpedos > 0: #And rect is pressed and torpedos remain:
                     print("Firing Shot!")                         #Fire
                     print("HIT!!!!!!")
+                    self.torpedos -= 1
                     pygame.sprite.Sprite.kill(ship)               #Delete the hit ship
                     ship = []                                     #Clear the log of collisions
+        for miss in empty_list:
+            if miss.rect.collidepoint(mousePos) == True:    #If mouse position intersects the rect box:
+                if pressed_keys[K_SPACE] and self.torpedos > 0: #And rect is pressed and torpedos remain:
+                    print("Firing Shot!")                         #Fire
+                    print("Miss")
+                    self.torpedos -= 1
+                    miss = []                                     #Clear the log of collisions
 
         if pressed_keys[K_ESCAPE]:
             running = False
@@ -113,6 +121,26 @@ class Ship(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
+class Empty(pygame.sprite.Sprite):
+    def __init__(self, xloc,yloc, imgw, imgh, img):
+        super().__init__()
+        self.image = pygame.image.load("Battleships Images/Ships/no_Ship.png").convert_alpha()
+        self.bigrect = self.image.get_rect()
+        self.rect = self.bigrect.inflate(imgw,imgh)
+        self.rect.y = yloc
+        self.rect.x = xloc
+        imgw = 256
+        imgh = 256
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+#need to make empty space spawn in all non-occupied areas
+#maybye make a list of all allowed positions, allocate ships to it randomly and 0s become empty?
+
+horiPos = [0,128,256,384,512,640,768,896]
+vertPos = [0,128,256,384,512,640,768,896]
+#possLoc = [[horipos[0],vertpos[0]],[horipos[1],vertpos[0]...]      This would work but would be very inefficient to type
 
 
 class Level:                                             
@@ -122,8 +150,8 @@ class Level:
         i = 0
         if level == 1:
              #Place spike locations for stage 1 here 
-             shloc.append((64, worldy // 2,9))           #The last number is how many ships in a row there are                        
-             shloc.append((worldx // 2, worldy -ty, 0))
+             shloc.append((horiPos[random.randint(0,7)], vertPos[random.randint(0,7)],4))  #BATTLESHIP         #The last number is how many ships in a row there are                        
+             shloc.append((worldx // 2, worldy -ty, 0)) #CRUISER
         elif level == 2:
              shloc.append((worldx // 2+ty, worldy //2, 10))
              shloc.append((worldx // 2, worldy -ty, 10))
@@ -136,15 +164,38 @@ class Level:
             i = i + 1
         return ship_list
 
+    def empty(level, tx, ty):
+        empty_list = pygame.sprite.Group()
+        emloc = []   #sploc is a list which determines the location of the ships e.g. [0, 642,screenY,256]. it may be more efficient to add locs here.oly do when sure of a pos
+        i = 0
+        if level == 1:
+             #Place spike locations for stage 1 here 
+             emloc.append((256, worldy // 2,0))           #The last number is how many ships in a row there are                        
+             emloc.append((worldx // 2, worldy -ty, 0))       #everywhere there is no 0
+        elif level == 2:
+             emloc.append((worldx // 2+ty, worldy //2, 10))
+             emloc.append((worldx // 2, worldy -ty, 10))
+        while i < len(emloc):                                    
+            j = 0
+            while j <= emloc[i][2]:
+                emp = Empty((emloc[i][0] + (j * (2.5*tx))), emloc[i][1], tx, ty, pygame.image.load("Battleships Images/Ships/no_Ship.png"))  #Change distance between ships with (j*tx)
+                empty_list.add(emp)
+                j = j + 1
+            i = i + 1
+        return empty_list
+
 
     def newLevel(level,tx,ty):
         level += 1
         Level.clearList()
         global ship_list 
-        ship_list = Level.ship(level, tx, ty)       
+        ship_list = Level.ship(level, tx, ty)
+        global empty_list 
+        empty_list = Level.empty(level, tx, ty) 
         
     def clearList():
         ship_list = []
+        empty_list = []
 
 
 
@@ -154,7 +205,6 @@ class Level:
 Level.newLevel(level, tx, ty)
 
 player = Player() #spawn the player character
-player.rect.y,player.rect.x = worldy // 2,worldx // 2    #moves to middle of screen
 
 
 #Loop for the majority of the actual game
@@ -175,6 +225,11 @@ while running == True:
 
     player.draw(screen)
     ship_list.draw(screen)
+    empty_list.draw(screen)
+
+    if player.torpedos == 0:
+        print("Game Over. You Lose")
+        running = False
 
 
     pygame.display.update()
