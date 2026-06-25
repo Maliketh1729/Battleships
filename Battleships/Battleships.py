@@ -24,7 +24,7 @@ ScreenSizeObj = pygame.display.Info()
 worldx, worldy = ScreenSizeObj.current_w,ScreenSizeObj.current_h
 print(worldx,worldy)
 screen = pygame.display.set_mode([worldx, worldy])
-pygame.display.set_caption("40k Battleships")
+pygame.display.set_caption("40k Battleships-Now with extra spaghetti!")
 ty = 64
 tx = 64
 global level #Sorry, I know its bad practice but I couldn't find a way around it
@@ -37,7 +37,7 @@ background = pygame.image.load("Battleships Images/UI/background.png")
 
 
 ##############
-debug = True #
+debug = True #              Makes ships visible
 ##############
 
 class Player(pygame.sprite.Sprite):
@@ -55,7 +55,6 @@ class Player(pygame.sprite.Sprite):
 
         for i in range(1,self.aniCycles + 1): #Loads the two frames of animation
             img = pygame.image.load("Battleships Images/UI/Cursor.png")
-            #an easier way to add more frames of the animation - just add 1 more number to the next file
             img.convert_alpha()
             self.images.append(img)
             self.image = self.images[self.curFrame]
@@ -64,27 +63,30 @@ class Player(pygame.sprite.Sprite):
 
 
     def update(self):
-        pressed_keys = pygame.key.get_pressed()
+        pressed_keys = pygame.key.get_pressed()               
         mousePos = pygame.mouse.get_pos() #use rect.collidepoint for detection
-        for ship in ship_list:
-            if ship.rect.collidepoint(mousePos) == True:    #If mouse position intersects the rect box:
-                if pressed_keys[K_SPACE] and self.torpedos > 0: #And rect is pressed and torpedos remain:
-                    print("Firing Shot!")                         #Fire
+        if pressed_keys[K_SPACE] and self.torpedos > 0: #If space is pressed and torpedos remain:
+            hit = False
+            torpedoCount = 0
+            for ship in ship_list:                                                                     
+                if ship.rect.collidepoint(mousePos) == True:    #If mouse position intersects the rect box:
+                    print("Firing Shot!")#Fire
                     print("HIT!!!!!!")
-                    print("Ships left:", len(ship_list)-1)
-                    self.torpedos -= 1
+                    print("Ships left:", len(ship_list)-1,". Shots left:", self.torpedos)
                     pygame.sprite.Sprite.kill(ship)               #Delete the hit ship
-                    ship = []                                     #Clear the log of collisions
-        for miss in empty_list:
-            if miss.rect.collidepoint(mousePos) == True:    #If mouse position intersects the rect box:
-                if pressed_keys[K_SPACE] and self.torpedos > 0: #And rect is pressed and torpedos remain:
-                    print("Firing Shot!")                         #Fire
-                    print("Miss")
-                    print("Ships left are stll:", len(ship_list)-1)
                     self.torpedos -= 1
-                    miss = []                                     #Clear the log of collisions
+                    hit = True
+                    time.sleep(0.5)
 
-        if pressed_keys[K_ESCAPE]:
+            if hit == False:
+                self.torpedos -= 1
+                print("Firing Shot!")#Fire
+                print("Miss")
+                print("Ships left are stll:", len(ship_list)-1,". Shots left:", self.torpedos)
+                time.sleep(0.5)
+            ship = []                                     #Clear the log of collisions
+
+        elif pressed_keys[K_ESCAPE]:
             running = False
 
         
@@ -132,24 +134,10 @@ class Ship(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-class Empty(pygame.sprite.Sprite):
-    def __init__(self, xloc,yloc, imgw, imgh, img):
-        super().__init__()
-        self.image = pygame.image.load("Battleships Images/Ships/no_Ship.png").convert_alpha()
-        self.bigrect = self.image.get_rect()
-        self.rect = self.bigrect.inflate(imgw,imgh)
-        self.rect.y = yloc
-        self.rect.x = xloc
-        imgw = 256
-        imgh = 256
-
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
-
 #need to make empty space spawn in all non-occupied areas
 #maybye make a list of all allowed positions, allocate ships to it randomly and 0s become empty?
 
-horiPos = [0,128,256,384,512,640,768,896,1024,1152,1280]
+horiPos = [0,128,256,384,512,640,768,896,1024,1152,1280,1408,1536,1664]
 vertPos = [0,128,256,384,512,640,768,896,1024]
 #possLoc = [[horipos[0],vertpos[0]],[horipos[1],vertpos[0]...]      This would work but would be very inefficient to type
 
@@ -162,12 +150,12 @@ class Level:
         hshloc = []
         vshloc = []
         i = 0
-        if level == 1:
-             #Place spike locations for stage 1 here 
-             hshloc.append((horiPos[random.randint(0,7)], vertPos[random.randint(0,7)], 4))  #CARRIER         #The last number is how many ships in a row there are -1                       
-             hshloc.append((horiPos[random.randint(0,7)], vertPos[random.randint(0,7)], 1)) #BATTLESHIP
-             vshloc.append((horiPos[random.randint(0,7)], vertPos[random.randint(0,7)], 2))  #d                   
-             vshloc.append((horiPos[random.randint(0,7)], vertPos[random.randint(0,7)], 3)) #d
+        #Place spike locations for stage 1 here 
+        hshloc.append((horiPos[random.randint(0,8)], vertPos[random.randint(0,7)], 4))  #CARRIER         #The last number is how many ships in a row there are -1                       
+        hshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,7)], 1)) #SUB
+        vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,6)], 1)) #DESTROYER
+        vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,5)], 2))  #CRUISER                   
+        vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,4)], 3)) #BATTLESHIP
         while i < len(hshloc):                                    
             j = 0
             while j <= hshloc[i][2]:  #repeat as long as no exceeding index 2 (how many times it tiles)
@@ -180,39 +168,16 @@ class Level:
             j = 0
             while j <= vshloc[i][2]:  #repeat as long as no exceeding index 2 (how many times it tiles)
                 shp = Ship((vshloc[i][0]), vshloc[i][1] + (j * (2*tx)), tx, ty, pygame.image.load("Battleships Images/Ships/Battleship_Large.png"))  #Change distance between ships with (j*tx)
-                ship_list.add(shp)        #^move this to            ^here to flip the tiling vertically
+                ship_list.add(shp)    
                 j = j + 1                 
             i = i + 1               
         return ship_list
-
-    def empty(level, tx, ty):
-        empty_list = pygame.sprite.Group()
-        emloc = []   #sploc is a list which determines the location of the ships e.g. [0, 642,screenY,256]. it may be more efficient to add locs here.oly do when sure of a pos
-        i = 0
-        if level == 1:
-             #Place spike locations for stage 1 here 
-             emloc.append((256, worldy // 2,0))           #The last number is how many ships in a row there are                        
-             emloc.append((worldx // 2, worldy -ty, 0))       #everywhere there is no 0
-        elif level == 2:
-             emloc.append((worldx // 2+ty, worldy //2, 10))
-             emloc.append((worldx // 2, worldy -ty, 10))
-        while i < len(emloc):                                    
-            j = 0
-            while j <= emloc[i][2]:
-                emp = Empty((emloc[i][0] + (j * (2*tx))), emloc[i][1], tx, ty, pygame.image.load("Battleships Images/Ships/no_Ship.png"))  #Change distance between ships with (j*tx)
-                empty_list.add(emp)
-                j = j + 1
-            i = i + 1
-        return empty_list
-
 
     def newLevel(level,tx,ty):
         level += 1
         Level.clearList()
         global ship_list 
         ship_list = Level.ship(level, tx, ty)
-        global empty_list 
-        empty_list = Level.empty(level, tx, ty) 
         
     def clearList():
         ship_list = []
@@ -222,12 +187,19 @@ class Level:
 
 
 
-
 Level.newLevel(level, tx, ty)
 
 player = Player() #spawn the player character
-
-
+colGen = True
+while colGen == True:                                  #While ships are colliding:
+    colGen = False                                    
+    ships = ship_list.sprites()
+    for i, ship1 in enumerate(ships):                  #Goes through ship list and takes both value + index
+        for ship2 in ships[i+1:]:                          #Takes another ship from it that is next
+            if pygame.sprite.collide_mask(ship1, ship2):        #If they collide(mask is more accurate than rect)
+                Level.newLevel(level, tx, ty)                        #Regenerate the level
+                colGen = True
+    
 #Loop for the majority of the actual game
 while running == True:
     clock.tick(60)            #Updates the clock
@@ -236,7 +208,7 @@ while running == True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-    
+
 
     player.update()
     
@@ -246,13 +218,12 @@ while running == True:
 
     player.draw(screen)
     ship_list.draw(screen)
-    empty_list.draw(screen)
 
     if not ship_list:
         print("All ships destroyed, you win!")  #For some reason an empty sprite group is considered false
         running = False
 
-    if player.torpedos == 0:                    #ordered so that if the player runs out of torpedos on the final shot they still win
+    if player.torpedos <= 0:                    #ordered so that if the player runs out of torpedos on the final shot they still win
         print("Game Over. You Lose")
         running = False
 
