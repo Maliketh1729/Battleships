@@ -1,4 +1,4 @@
-import time, sys, os, pygame, random
+import time, sys, os, pygame, random, pickle
 #import PySimpleGUI as psG
 from pygame.locals import *                #Allows easier use of pygame functions
 #from tkinter import *
@@ -8,14 +8,16 @@ clock = pygame.time.Clock()         #Limits FPS to 60
 
 #Much of this code was imported from my personal platformer project, so it may be a little messy
 
-pickleExists = os.path.exists(r"Z:\Yr 10 Computer Science\Password system\userPassword.pkl")
+pickleExists = os.path.exists(r"Z:/Yr 10 Computer Science/Personal Projects/PyGame Experimentation/Battleships/highScore.pkl")
 if pickleExists == True:
-    with open('score.pkl', 'rb') as f:
-        highScore = pickle.load(f)
+    with open('highScore.pkl', 'rb') as f:                        #In read-only mode
+        highScore = int(pickle.load(f))
         pickleConfirmation = True
+        print("High Score: ",highScore,".Can you beat it?")
 else:
     print("No score file found - high score inaccessible")
     pickleConfirmation = False
+curScore = 0
 
 #Apologies, it may require another module on top of pyGame - pySimpleGUI.
 #It can be installed through powershell with 'python -m pip install PySimpleGUI'
@@ -33,11 +35,13 @@ running = True
 #Background
 background = pygame.image.load("Battleships Images/UI/background.png")
 
+hit_ships = pygame.sprite.Group()
+
 
 
 
 ##############
-debug = True #              Makes ships visible
+debug = False #              Makes ships visible
 ##############
 
 class Player(pygame.sprite.Sprite):
@@ -51,7 +55,7 @@ class Player(pygame.sprite.Sprite):
         self.images = []
         self.aniCycles = 2
 
-        self.torpedos = 20
+        self.torpedos = 35
 
         for i in range(1,self.aniCycles + 1): #Loads the two frames of animation
             img = pygame.image.load("Battleships Images/UI/Cursor.png")
@@ -73,17 +77,22 @@ class Player(pygame.sprite.Sprite):
                     print("Firing Shot!")#Fire
                     print("HIT!!!!!!")
                     print("Ships left:", len(ship_list)-1,". Shots left:", self.torpedos)
-                    pygame.sprite.Sprite.kill(ship)               #Delete the hit ship
+                    global curScore
+                    print("Current score is: ", curScore)
+                    curScore += 1                      #Could add a combo system;hit more ships in a row, ^ mult?. #Not updating for some reason-being reset?
+                    ship_list.remove(ship)
+                    hit_ships.add(ship)               #Delete the hit ship
+                    ship.image = pygame.image.load("Battleships Images/Ships/hit_Ship.png").convert_alpha()
                     self.torpedos -= 1
                     hit = True
-                    time.sleep(0.5)
+                    time.sleep(0.1)
 
             if hit == False:
                 self.torpedos -= 1
                 print("Firing Shot!")#Fire
                 print("Miss")
                 print("Ships left are stll:", len(ship_list)-1,". Shots left:", self.torpedos)
-                time.sleep(0.5)
+                time.sleep(0.1)
             ship = []                                     #Clear the log of collisions
 
         elif pressed_keys[K_ESCAPE]:
@@ -173,6 +182,8 @@ class Level:
             i = i + 1               
         return ship_list
 
+        
+
     def newLevel(level,tx,ty):
         level += 1
         Level.clearList()
@@ -182,7 +193,6 @@ class Level:
     def clearList():
         ship_list = []
         empty_list = []
-
 
 
 
@@ -217,15 +227,27 @@ while running == True:
     screen.blit(background,(0,0))
 
     player.draw(screen)
-    ship_list.draw(screen)
+    if debug == True:              #Debug allows seeing the ship locs
+        ship_list.draw(screen)
+    hit_ships.draw(screen)
 
     if not ship_list:
         print("All ships destroyed, you win!")  #For some reason an empty sprite group is considered false
         running = False
+        curScore += player.torpedos
+        if curScore > highScore and pickleConfirmation == True:
+            with open('highScore.pkl', 'wb') as f:
+                pickle.dump(curScore, f)
+            print("New High Score: ", curScore)
 
     if player.torpedos <= 0:                    #ordered so that if the player runs out of torpedos on the final shot they still win
         print("Game Over. You Lose")
         running = False
+        curScore -= 5
+        if curScore > highScore and pickleConfirmation == True:
+            with open('highScore.pkl', 'wb') as f:
+                pickle.dump(curScore, f)
+            print("New High Score: ", curScore)
 
 
     pygame.display.update()
