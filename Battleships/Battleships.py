@@ -11,8 +11,8 @@ clock = pygame.time.Clock()         #Limits FPS to 60
 pickleExists = os.path.exists(r"Z:/Yr 10 Computer Science/Personal Projects/PyGame Experimentation/Battleships/highScore.pkl")
 if pickleExists == True:
     with open('highScore.pkl', 'rb') as f:                        #In read-only mode
-        highScore = int(pickle.load(f))
-        pickleConfirmation = True
+        highScore = int(pickle.load(f))                           #Takes the value in the high score file
+        pickleConfirmation = True                   
         print("High Score: ",highScore,".Can you beat it?")
 else:
     print("No score file found - high score inaccessible")
@@ -41,7 +41,7 @@ hit_ships = pygame.sprite.Group()
 
 
 ##############
-debug = False #              Makes ships visible
+debug = True #              Makes ships visible
 ##############
 
 class Player(pygame.sprite.Sprite):
@@ -133,8 +133,8 @@ class Ship(pygame.sprite.Sprite):
     def __init__(self, xloc,yloc, imgw, imgh, img):
         super().__init__()
         self.image = pygame.image.load("Battleships Images/Ships/Battleship_Large.png").convert_alpha()
-        self.bigrect = self.image.get_rect()
-        self.rect = self.bigrect.inflate(imgw,imgh)
+        self.rect = self.image.get_rect()
+       ## self.rect = self.bigrect.inflate(imgw,imgh)
         self.rect.y = yloc
         self.rect.x = xloc
         imgw = 256
