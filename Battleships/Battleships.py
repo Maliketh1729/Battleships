@@ -8,7 +8,7 @@ clock = pygame.time.Clock()         #Limits FPS to 60
 
 #Much of this code was imported from my personal platformer project, so it may be a little messy
 
-pickleExists = os.path.exists(r"Z:/Yr 10+11 Computer Science/Personal Projects/PyGame Experimentation/Battleships/highScore.pkl")
+pickleExists = os.path.exists(r"Battleships/highScore.pkl")
 if pickleExists == True:
     with open('highScore.pkl', 'rb') as f:                        #In read-only mode
         highScore = int(pickle.load(f))                           #Takes the value in the high score file
@@ -35,6 +35,7 @@ level = 0
 global combo
 combo = 0
 running = True
+font = pygame.font.SysFont('Sans', 120)
 
 #Background
 background = pygame.image.load("Battleships Images/UI/background.png")
@@ -84,14 +85,18 @@ class Player(pygame.sprite.Sprite):
                     global curScore
                     print("Current score is: ", curScore)
                     global combo
-                    combo += 1
+                    if combo == 0:
+                        combo += 1
+                    else:
+                        combo *= 2
+                        print("Combo mult: x",combo)
                     curScore += (combo * 2)                      #Could add a combo system;hit more ships in a row, ^ mult?. #Not updating for some reason-being reset?
                     ship_list.remove(ship)
                     hit_ships.add(ship)               #Delete the hit ship
                     global pickleConfirmation
                     if pickleConfirmation == True:
                         if highScore == 666:
-                            ship.image = pygame.image.load("Battleships Images/UI/IMAGE_FRIEND.jpg").convert_alpha()
+                            ship.image = pygame.image.load("Battleships Images/UI/IMAGE_FRIEND.jpg").convert_alpha()   #Apologies, just an in
                             print("Friendly")
                         else:
                             ship.image = pygame.image.load("Battleships Images/Ships/hit_Ship.png").convert_alpha()
@@ -106,8 +111,11 @@ class Player(pygame.sprite.Sprite):
                 self.torpedos -= 1
                 print("Firing Shot!")#Fire
                 print("Miss")
+                if combo >= 4:
+                    print("COMBO LOST")
                 combo = 0
                 print("Ships left are stll:", len(ship_list)-1,". Shots left:", self.torpedos)
+
                 time.sleep(0.1)
             ship = []                                     #Clear the log of collisions
 
@@ -174,10 +182,10 @@ class Level:
         vshloc = []
         i = 0
         #Place spike locations for stage 1 here 
-        hshloc.append((horiPos[random.randint(0,8)], vertPos[random.randint(0,7)], 4))  #CARRIER         #The last number is how many ships in a row there are -1                       
-        hshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,7)], 1)) #SUB
+        hshloc.append((horiPos[random.randint(0,8)], vertPos[random.randint(0,7)], 4))  #CARRIER            #To manually place ships, change random to a number             
+        hshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,7)], 1)) #SUB                #E.G.horiPos[6],vertPos[4].
         vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,6)], 1)) #DESTROYER
-        vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,5)], 2))  #CRUISER                   
+        vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,5)], 2))  #CRUISER           #The last number is the class of ship(how long it is)     
         vshloc.append((horiPos[random.randint(0,11)], vertPos[random.randint(0,4)], 3)) #BATTLESHIP
         while i < len(hshloc):                                    
             j = 0
@@ -208,8 +216,10 @@ class Level:
         ship_list = []
         empty_list = []
 
-#UI HERE
-
+def UI(msg):
+    global screen
+    text = font.render(msg, False, "blue") 
+    screen.blit(text,(worldx//2,ty))
 
 Level.newLevel(level, tx, ty)
 
@@ -232,7 +242,8 @@ while running == True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-
+    msg=("Current:"+str(curScore)+" Torpedos:"+str(player.torpedos)+" Combo:"+str(combo))
+    UI(msg)
 
     player.update()
     
@@ -253,6 +264,7 @@ while running == True:
             if curScore > highScore:
                 with open('highScore.pkl', 'wb') as f:
                     pickle.dump(curScore, f)
+                    pi
                 print("New High Score: ", curScore)
 
     if player.torpedos <= 0:                    #ordered so that if the player runs out of torpedos on the final shot they still win
@@ -264,7 +276,6 @@ while running == True:
                 with open('highScore.pkl', 'wb') as f:
                     pickle.dump(curScore, f)
                 print("New High Score: ", curScore)
-#IF HIGH IS GASTER NUM
 
     pygame.display.update()
     screen.fill("black")
