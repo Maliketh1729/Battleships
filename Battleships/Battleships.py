@@ -8,10 +8,11 @@ clock = pygame.time.Clock()         #Limits FPS to 60
 
 #Much of this code was imported from my personal platformer project, so it may be a little messy
 
-pickleExists = os.path.exists(r"Z:/Yr 10 Computer Science/Personal Projects/PyGame Experimentation/Battleships/highScore.pkl")
+pickleExists = os.path.exists(r"Z:/Yr 10+11 Computer Science/Personal Projects/PyGame Experimentation/Battleships/highScore.pkl")
 if pickleExists == True:
     with open('highScore.pkl', 'rb') as f:                        #In read-only mode
         highScore = int(pickle.load(f))                           #Takes the value in the high score file
+        global pickleConfirmation
         pickleConfirmation = True                   
         print("High Score: ",highScore,".Can you beat it?")
 else:
@@ -31,7 +32,10 @@ ty = 64
 tx = 64
 global level #Sorry, I know its bad practice but I couldn't find a way around it
 level = 0
+global combo
+combo = 0
 running = True
+
 #Background
 background = pygame.image.load("Battleships Images/UI/background.png")
 
@@ -79,10 +83,21 @@ class Player(pygame.sprite.Sprite):
                     print("Ships left:", len(ship_list)-1,". Shots left:", self.torpedos)
                     global curScore
                     print("Current score is: ", curScore)
-                    curScore += 1                      #Could add a combo system;hit more ships in a row, ^ mult?. #Not updating for some reason-being reset?
+                    global combo
+                    combo += 1
+                    curScore += (combo * 2)                      #Could add a combo system;hit more ships in a row, ^ mult?. #Not updating for some reason-being reset?
                     ship_list.remove(ship)
                     hit_ships.add(ship)               #Delete the hit ship
-                    ship.image = pygame.image.load("Battleships Images/Ships/hit_Ship.png").convert_alpha()
+                    global pickleConfirmation
+                    if pickleConfirmation == True:
+                        if highScore == 666:
+                            ship.image = pygame.image.load("Battleships Images/UI/IMAGE_FRIEND.jpg").convert_alpha()
+                            print("Friendly")
+                        else:
+                            ship.image = pygame.image.load("Battleships Images/Ships/hit_Ship.png").convert_alpha()
+
+                    else:
+                        ship.image = pygame.image.load("Battleships Images/Ships/hit_Ship.png").convert_alpha()
                     self.torpedos -= 1
                     hit = True
                     time.sleep(0.1)
@@ -91,6 +106,7 @@ class Player(pygame.sprite.Sprite):
                 self.torpedos -= 1
                 print("Firing Shot!")#Fire
                 print("Miss")
+                combo = 0
                 print("Ships left are stll:", len(ship_list)-1,". Shots left:", self.torpedos)
                 time.sleep(0.1)
             ship = []                                     #Clear the log of collisions
@@ -148,9 +164,7 @@ class Ship(pygame.sprite.Sprite):
 
 horiPos = [0,128,256,384,512,640,768,896,1024,1152,1280,1408,1536,1664]
 vertPos = [0,128,256,384,512,640,768,896,1024]
-#possLoc = [[horipos[0],vertpos[0]],[horipos[1],vertpos[0]...]      This would work but would be very inefficient to type
 
-#could store ship locations in a list and regenerate if there is any overlap?
 
 
 class Level:                                             
@@ -194,7 +208,7 @@ class Level:
         ship_list = []
         empty_list = []
 
-
+#UI HERE
 
 
 Level.newLevel(level, tx, ty)
@@ -235,20 +249,22 @@ while running == True:
         print("All ships destroyed, you win!")  #For some reason an empty sprite group is considered false
         running = False
         curScore += player.torpedos
-        if curScore > highScore and pickleConfirmation == True:
-            with open('highScore.pkl', 'wb') as f:
-                pickle.dump(curScore, f)
-            print("New High Score: ", curScore)
+        if pickleConfirmation == True:
+            if curScore > highScore:
+                with open('highScore.pkl', 'wb') as f:
+                    pickle.dump(curScore, f)
+                print("New High Score: ", curScore)
 
     if player.torpedos <= 0:                    #ordered so that if the player runs out of torpedos on the final shot they still win
         print("Game Over. You Lose")
         running = False
         curScore -= 5
-        if curScore > highScore and pickleConfirmation == True:
-            with open('highScore.pkl', 'wb') as f:
-                pickle.dump(curScore, f)
-            print("New High Score: ", curScore)
-
+        if pickleConfirmation == True:
+            if curScore > highScore:
+                with open('highScore.pkl', 'wb') as f:
+                    pickle.dump(curScore, f)
+                print("New High Score: ", curScore)
+#IF HIGH IS GASTER NUM
 
     pygame.display.update()
     screen.fill("black")
